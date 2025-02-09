@@ -1,0 +1,57 @@
+﻿@inherits LayoutComponentBase
+@inject LocalStorageService localStorageService
+@inject NotificationService notificationService
+
+<main>
+	<div class="page">
+		<div class="sidebar">
+			<NavMenu />
+		</div>
+
+		<main class="main">
+			<div class="top-row px-4 d-flex justify-content-between align-items-center">
+				@if(!string.IsNullOrEmpty(userName))
+				{
+					<div class="d-flex align-items-center">
+						<p class="mb-0 fw-bold text-secondary d-inline-block me-1">User:</p>
+						<p class="mb-0 text-primary fw-bold d-inline-block">@userName</p>
+					</div>
+				}
+				<a href="https://learn.microsoft.com/aspnet/core/" class="btn btn-link ms-auto" target="_blank">About</a>
+			</div>
+			<article class="content px-4">
+				@Body
+			</article>
+		</main>
+	</div>
+</main>
+
+@code {
+	private string? notificationMessage;
+	private string? userName = "";
+
+	protected override async Task OnInitializedAsync()
+	{
+		notificationService.Subscribe("registration", HandleNotificationAsync);
+		await localStorageService.RemoveItemAsync("IdUser");
+		await localStorageService.RemoveItemAsync("UserName");
+	}
+
+	private async Task HandleNotificationAsync(string message)
+	{
+		userName = await localStorageService.GetItemAsync("UserName");
+		notificationMessage = message;
+		StateHasChanged(); // Aggiorna l'interfaccia utente
+	}
+
+	private void DismissNotification()
+	{
+		notificationMessage = null;
+		StateHasChanged();
+	}
+
+	public void Dispose()
+	{
+		notificationService.Unsubscribe("registration", HandleNotificationAsync);
+	}
+}

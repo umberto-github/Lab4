@@ -1,0 +1,72 @@
+@page "/tracker"
+@inject UserService userService
+@inject SharedService sharedService
+@inject LocalStorageService localStorageService
+
+<h3>Tracker</h3>
+
+<div>
+    <p><strong>UserId:</strong> @userId</p>
+    <p><strong>UserName:</strong> @userName</p>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Date</th>
+                <th>Location</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (userModel?.AttendenceModelList != null)
+            {
+                @foreach (var item in userModel.AttendenceModelList)
+                {
+                    <tr>
+                        <td>@item.EventDetailModel?.Id</td>
+                        <td>@item.EventDetailModel?.Name</td>
+                        <td>@item.AttendanceDate</td>
+                        <td>@item.EventDetailModel?.Location</td>
+                        <td>@item.EventDetailModel?.Description</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5">No attendance records found.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private string userId = "";
+    private string userName = "";
+    private UserModel? userModel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        string? localStorageUserId = await localStorageService.GetItemAsync("IdUser");
+        string? localStorageUserName = await localStorageService.GetItemAsync("UserName");
+
+        if (!string.IsNullOrEmpty(localStorageUserId) && !string.IsNullOrEmpty(localStorageUserName))
+        {
+            int parsedUserId;
+            if (int.TryParse(localStorageUserId, out parsedUserId))
+            {
+                userModel = await userService.GetUserByIdAsync(parsedUserId);
+                if (userModel != null)
+                {
+                    userId = localStorageUserId;
+                    userName = localStorageUserName;
+                }
+            }
+        }
+    }
+}

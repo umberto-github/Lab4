@@ -1,0 +1,18 @@
+
+.btn:hover[b-1kkbop8qsp] {background-color: #0069d9}
+
+.btn:active[b-1kkbop8qsp] {
+	background-color: #0069d9;
+	box-shadow: 0 5px #666;
+	transform: translateY(4px);
+}
+
+.event-card[b-1kkbop8qsp] {
+	border: 1px solid #ddd;
+	padding: 20px;
+	margin-top: 20px;
+	border-radius: 10px;
+	background-color: #f9f9f9;
+	box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+

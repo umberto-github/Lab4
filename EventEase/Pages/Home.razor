@@ -1,0 +1,30 @@
+﻿@page "/"
+@inject EventService eventService;
+
+<h3>Events</h3>
+
+<div class="container">
+	<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+		@foreach (var eventItem in events)
+		{
+			<div class="col">
+				<div class="card h-100 d-flex flex-column">
+					<EventDetails EventId="eventItem.Id" />
+				</div>
+			</div>
+		}
+	</div>
+</div>
+
+
+@code {
+	private List<EventModel> events;
+		
+	protected override async Task OnInitializedAsync()
+	{
+		//Init Event List
+		events = eventService.EventList;
+
+	}
+
+}

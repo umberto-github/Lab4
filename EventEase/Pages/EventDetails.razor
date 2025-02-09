@@ -1,0 +1,142 @@
+﻿@inject EventService eventService
+@inject NotificationService notificationService
+@inject LocalStorageService localStorageService
+@inject UserService userService
+@inject SharedService sharedService
+@inject IJSRuntime JSRuntime
+
+<div class="container my-4">
+	<img src="img/specialevent.jpg" class="img-fluid" alt="Event Image">
+	<div class="card-body d-flex flex-column align-items-center justify-content-center text-center">
+		<h4 class="card-title">Event</h4>
+
+		<div class="row w-100 d-flex justify-content-center">
+			<div class="col-auto">
+				@if (eventDetails != null)
+				{
+					<EventCard EventDetails="eventDetails" />
+				}
+				else
+				{
+					<p>Loading event details...</p>
+				}
+			</div>
+		</div>
+
+		<button class="btn btn-danger mt-3 mb-3" @onclick="SetAttendanceAsync">Partecipation</button>
+
+	</div>
+</div>
+<!--Toast Message: Please register to attend the event.-->
+@if (showRegistrationMsg)
+{
+	<div class="toast-container position-fixed bottom-0 end-0 p-3">
+		<div id="liveToast" class="toast align-items-center text-white bg-primary border-0" role="alert"
+			aria-live="assertive" aria-atomic="true">
+			<div class="d-flex">
+				<div class="toast-body">
+					<strong class="me-auto">Notification</strong>
+					<small class="text-muted">Just now</small>
+					<hr class="my-2">
+					Please register to attend the event.
+				</div>
+				<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+					aria-label="Close"></button>
+			</div>
+		</div>
+	</div>
+
+}
+
+
+
+@code {
+	[Parameter]
+	public int EventId { get; set; }
+
+	private EventDetailModel? eventDetails;
+	private List<EventDetailModel> events = new List<EventDetailModel>();
+
+	private string? localStorageUserId;
+	private bool showRegistrationMsg;
+
+	protected override async Task OnInitializedAsync()
+	{
+
+		events = eventService.EventDetailList ?? new List<EventDetailModel>();
+
+		showRegistrationMsg = false;
+
+		notificationService.Subscribe("registration", HandleNotificationAsync);
+
+	}
+
+	protected override void OnParametersSet()
+	{
+		eventDetails = GetEventDetailsById(EventId);
+	}
+
+	private EventDetailModel? GetEventDetailsById(int eventId)
+	{
+		return events.FirstOrDefault(e => e.Id == eventId);
+	}
+
+
+
+	private async Task HandleNotificationAsync(string message)
+	{
+		localStorageUserId = await localStorageService.GetItemAsync("IdUser");
+
+		await InvokeAsync(StateHasChanged); // Forza l'aggiornamento UI
+
+	}
+
+	// Set the Attendance for the registered user
+	private async Task SetAttendanceAsync()
+	{
+		localStorageUserId = await localStorageService.GetItemAsync("IdUser");
+		if (!string.IsNullOrEmpty(localStorageUserId))
+		{
+			//Console.WriteLine($"EventId: {EventId} L'ID è {localStorageUserId}");
+			int Id = int.Parse(localStorageUserId);
+			UserModel user = await userService.GetUserByIdAsync(Id);
+			EventDetailModel? selectedEvent = await eventService.GetEventDetailByIdAsync(EventId);
+			AttendenceModel? attendance = new AttendenceModel(user, selectedEvent, DateTime.Now);
+			//user.AttendenceModelList.Add(attendance);
+			
+			await userService.SaveAttendanceAsync(Id, attendance);
+			//sharedService.UserList.Add(user);
+		}
+		else
+		{
+			showRegistrationMsg = true;
+			await InvokeAsync(StateHasChanged); // Ensure UI is updated before showing the toast
+			await ShowToastAsync();
+		}
+	}
+
+	// Toast message management
+	private async Task ShowToastAsync()
+	{ 
+		await JSRuntime.InvokeVoidAsync("MYAPP.showLiveToast", "liveToast");
+	}
+
+	[JSInvokable]
+	public void OnToastClosed()
+	{
+		showRegistrationMsg = false;
+		InvokeAsync(StateHasChanged);
+	}
+
+	private void DismissNotification()
+	{
+		StateHasChanged();
+	}
+
+	public void Dispose()
+	{
+		notificationService.Unsubscribe("registration", HandleNotificationAsync);
+	}
+
+
+}
